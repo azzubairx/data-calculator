@@ -7,21 +7,21 @@
     
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-    
-    <!-- PWA Requirements -->
-    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0B1121">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.png">
 
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Stylesheet -->
     <link rel="stylesheet" href="css/style.css">
 
-    <!-- Theme Initialization -->
     <script>
         const st = localStorage.getItem('theme');
         document.documentElement.setAttribute('data-theme', st || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
@@ -31,28 +31,28 @@
 
     <nav id="navbar">
         <div class="container nav-wrapper">
-            <a href="https://azzubair.ly" class="logo">
+            <a href="/" class="logo">
                 <i class="fas fa-wave-square"></i> DataDash
             </a>
             <div class="nav-controls">
-                <button class="icon-btn" id="themeToggle" aria-label="Toggle Theme"><i class="fas fa-moon"></i></button>
-                <button class="icon-btn font-bold" id="langToggle" aria-label="Toggle Language">EN</button>
+                <button class="icon-btn" id="themeToggle"><i class="fas fa-moon"></i></button>
+                <button class="lang-switch" id="langToggle">EN</button>
             </div>
         </div>
     </nav>
 
-    <main class="dashboard-wrapper">
+    <main class="dashboard-wrapper container">
         
-        <!-- Sidebar Settings -->
+        <!-- لوحة الإعدادات -->
         <aside class="sidebar glass-card">
             <div class="sec-header">
-                <i class="fas fa-sliders-h"></i> <span data-i18n="pnlSettings">إعدادات الباقة</span>
+                <i class="fas fa-sliders-h"></i> <span id="txtSet">إعدادات الباقة</span>
             </div>
             
             <div class="form-group">
-                <label data-i18n="lblProvider">مزود الخدمة</label>
+                <label id="lblPro">مزود الخدمة</label>
                 <select id="inpProvider" class="form-control">
-                    <option value="custom" data-i18n="optCustom">تخصيص يدوي</option>
+                    <option value="custom" id="optCus">تخصيص يدوي</option>
                     <option value="libyana">Libyana Mobile</option>
                     <option value="almadar">Almadar Aljadid</option>
                     <option value="ltt">LTT 4G / Fiber</option>
@@ -60,10 +60,10 @@
             </div>
 
             <div class="form-group">
-                <label data-i18n="lblTotal">إجمالي السعة (Quota)</label>
+                <label id="lblTot">إجمالي السعة</label>
                 <div class="input-grid">
                     <input type="number" id="inpTotal" class="form-control" placeholder="0" min="0" step="any">
-                    <select id="inpUnit" class="form-control">
+                    <select id="inpUnit" class="form-control unit-select">
                         <option value="GB">GB</option>
                         <option value="MB">MB</option>
                         <option value="TB">TB</option>
@@ -72,29 +72,29 @@
             </div>
 
             <div class="form-group">
-                <label data-i18n="lblRem">الرصيد المتبقي (Remaining)</label>
+                <label id="lblRem">السعة المتبقية الآن</label>
                 <input type="number" id="inpRem" class="form-control" placeholder="0" min="0" step="any">
             </div>
 
             <div class="input-grid form-group">
-                <div>
-                    <label data-i18n="lblStart">الاشتراك</label>
+                <div style="flex:1;">
+                    <label id="lblStart">تاريخ البدء</label>
                     <input type="date" id="inpStart" class="form-control">
                 </div>
-                <div>
-                    <label data-i18n="lblExp">الانتهاء</label>
+                <div style="flex:1;">
+                    <label id="lblExp">تاريخ الانتهاء</label>
                     <input type="date" id="inpExp" class="form-control">
                 </div>
             </div>
 
             <div class="form-group">
-                <label data-i18n="lblPrice">التكلفة المالية (اختياري)</label>
+                <label id="lblPrice">السعر (اختياري)</label>
                 <input type="number" id="inpPrice" class="form-control" placeholder="0.00" min="0">
             </div>
 
             <div class="btn-row">
                 <button class="btn btn-outline" id="btnShare">
-                    <i class="fas fa-link"></i> <span data-i18n="btnShare">نسخ الرابط</span>
+                    <i class="fas fa-link"></i> <span id="txtShare">رابط</span>
                 </button>
                 <button class="btn btn-danger" id="btnReset">
                     <i class="fas fa-sync-alt"></i>
@@ -102,98 +102,82 @@
             </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- مساحة العمل الرئيسية -->
         <div class="main-area">
             
             <div class="tabs-container glass-card">
-                <button class="tab-btn active" data-tab="tab1"><i class="fas fa-chart-pie"></i> <span data-i18n="tabDash">المؤشرات</span></button>
-                <button class="tab-btn" data-tab="tab2"><i class="fas fa-flask"></i> <span data-i18n="tabTools">أدوات المحاكاة</span></button>
+                <button class="tab-btn active" data-tab="tab1"><i class="fas fa-chart-pie"></i> <span id="tbDsh">التحليل</span></button>
+                <button class="tab-btn" data-tab="tab2"><i class="fas fa-flask"></i> <span id="tbTls">الأدوات</span></button>
             </div>
 
-            <!-- TAB 1: Dashboard -->
             <div id="tab1" class="tab-content active">
                 
                 <div class="status-box" id="statusBox">
                     <i class="fas fa-info-circle" id="stIcon"></i>
                     <div>
-                        <h3 id="stTitle" data-i18n="stInit">قيد الانتظار</h3>
-                        <p id="stDesc" data-i18n="stInitDesc">أدخل البيانات لتوليد التحليل الاقتصادي.</p>
+                        <h3 id="stTitle">جاهز للحساب</h3>
+                        <p id="stDesc">أدخل الرصيد المتبقي وتاريخ الانتهاء للبدء.</p>
                     </div>
                 </div>
 
                 <div class="metrics-grid">
                     <div class="metric primary-card">
-                        <span class="m-lbl" data-i18n="mSafe">المعدل اليومي المسموح</span>
-                        <div class="m-val-row"><span id="valSafe" class="m-val">0.00</span><span id="uSafe" class="m-unit">MB</span></div>
+                        <span class="m-lbl" id="mSf">الحد الآمن / يوم</span>
+                        <div class="m-val-row"><span id="valSafe" class="m-val">0.00</span><span class="m-unit">GB</span></div>
                     </div>
                     <div class="metric glass-card">
-                        <span class="m-lbl" data-i18n="mAvg">متوسط الاستهلاك الفعلي</span>
-                        <div class="m-val-row"><span id="valAvg" class="m-val">0.00</span><span id="uAvg" class="m-unit">MB</span></div>
+                        <span class="m-lbl" id="mAv">متوسط الاستهلاك</span>
+                        <div class="m-val-row"><span id="valAvg" class="m-val">0.00</span><span class="m-unit">GB</span></div>
                     </div>
                     <div class="metric glass-card">
-                        <span class="m-lbl" data-i18n="mCost">مؤشر التكلفة الاقتصادية</span>
-                        <div class="m-val-row"><span id="valCost" class="m-val">0.00</span><span class="m-unit">/ GB</span></div>
+                        <span class="m-lbl" id="mCs">تكلفة الـ GB</span>
+                        <div class="m-val-row"><span id="valCost" class="m-val">0.00</span><span class="m-unit"></span></div>
                     </div>
                     <div class="metric glass-card">
-                        <span class="m-lbl" data-i18n="mForecast">التوقع الزمني للنفاد</span>
-                        <div class="m-val-row"><span id="valDate" class="m-val date-val">--</span></div>
+                        <span class="m-lbl" id="mFc">توقع النفاد</span>
+                        <div class="m-val-row"><span id="valDate" class="m-val text-sm">--</span></div>
                     </div>
                 </div>
 
                 <div class="chart-wrapper glass-card">
                     <div class="chart-canvas"><canvas id="dashChart"></canvas></div>
                     <div class="chart-details">
-                        <div class="d-row"><span data-i18n="lblUsed">المستهلك</span> <strong id="outUsed">0</strong></div>
-                        <div class="d-row"><span data-i18n="lblDays">المدة المنقضية</span> <strong id="outDaysP">0</strong></div>
-                        <div class="d-row"><span data-i18n="lblLeft">الصلاحية المتبقية</span> <strong id="outDaysL">0</strong></div>
+                        <div class="d-row"><span id="dU">الاستهلاك</span> <strong id="outUsed">0</strong></div>
+                        <div class="d-row"><span id="dP">المدة المنقضية</span> <strong id="outDaysP">0</strong></div>
+                        <div class="d-row"><span id="dL">الأيام المتبقية</span> <strong id="outDaysL">0</strong></div>
+                        <div class="d-row"><span id="dPr">نسبة الاستهلاك</span> <strong id="outProg">0%</strong></div>
                     </div>
                 </div>
 
             </div>
 
-            <!-- TAB 2: Smart Tools & Simulation -->
             <div id="tab2" class="tab-content">
-                
-                <div class="glass-card mb-2">
-                    <div class="sec-header"><i class="fas fa-sliders-h"></i> <span data-i18n="simTitle">محاكاة المستقبل (تغيير النمط)</span></div>
-                    <p class="tool-desc" data-i18n="simDesc">ماذا لو قررت تغيير معدل استهلاكك اليومي؟ حرّك المؤشر لاكتشاف موعد انتهاء باقتك.</p>
-                    
-                    <div style="margin: 20px 0;">
-                        <input type="range" id="simSlider" min="0.1" max="10" step="0.1" value="1" style="width: 100%;">
-                        <div style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--primary);">
-                            <span id="simVal">1.0</span> GB / <span data-i18n="lblDay">يوم</span>
-                        </div>
-                    </div>
-                    <div class="result-box" id="simResult">--</div>
-                </div>
-
                 <div class="metrics-grid">
-                    <div class="glass-card">
-                        <div class="sec-header"><i class="fas fa-download"></i> <span data-i18n="tlDown">إمكانية التنزيل</span></div>
-                        <div class="form-group mt-1">
-                            <input type="number" id="inpDown" class="form-control" placeholder="Target Size (GB)">
-                        </div>
-                        <div class="result-box text-sm" id="resDown">--</div>
+                    <!-- حاسبة التنزيل -->
+                    <div class="glass-card metric" style="justify-content: flex-start; gap: 15px;">
+                        <div class="sec-header mb-0"><i class="fas fa-download"></i> <span id="tlDw">حاسبة التنزيلات</span></div>
+                        <input type="number" id="inpDown" class="form-control" placeholder="حجم الملف (GB)">
+                        <div class="result-box" id="resDown">--</div>
                     </div>
-
-                    <div class="glass-card">
-                        <div class="sec-header"><i class="fas fa-tachometer-alt"></i> <span data-i18n="tlSpeed">سرعة الإنترنت</span></div>
-                        <div class="input-grid mt-1 form-group">
-                            <input type="number" id="inpSpeedMbps" class="form-control" placeholder="Speed (Mbps)">
-                            <input type="number" id="inpSpeedSize" class="form-control" placeholder="Size (GB)">
+                    <!-- حاسبة السرعة -->
+                    <div class="glass-card metric" style="justify-content: flex-start; gap: 15px;">
+                        <div class="sec-header mb-0"><i class="fas fa-tachometer-alt"></i> <span id="tlSp">السرعة والوقت</span></div>
+                        <div class="input-grid">
+                            <input type="number" id="inpSpeedMbps" class="form-control" placeholder="Mbps">
+                            <input type="number" id="inpSpeedSize" class="form-control" placeholder="GB">
                         </div>
-                        <div class="result-box text-sm" id="resSpeed">--</div>
+                        <div class="result-box" id="resSpeed">--</div>
                     </div>
                 </div>
-
             </div>
+            
         </div>
     </main>
 
     <script src="js/app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('Service Worker Failed:', err));
         }
     </script>
 </body>
