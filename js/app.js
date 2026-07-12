@@ -1,240 +1,236 @@
-/* ============================================================
-   DataDash - Core JS Logic
-   ============================================================ */
-
-const tTgl = document.getElementById('themeToggle');
-const tIcon = tTgl.querySelector('i');
-tTgl.addEventListener('click', () => {
-    const n = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', n);
-    tIcon.className = n === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
-    localStorage.setItem('theme', n);
-    if(mChart) { mChart.options.plugins.legend.labels.color = n==='dark'?'#F8FAFC':'#0F172A'; mChart.update(); }
+const tBtn = document.getElementById('themeToggle');
+const tIco = tBtn.querySelector('i');
+tBtn.addEventListener('click', () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const nTh = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nTh);
+    tIco.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    localStorage.setItem('theme', nTh);
+    if(mChart) { mChart.options.plugins.legend.labels.color = nTh==='dark'?'#F8FAFC':'#0F172A'; mChart.update(); }
 });
 
 const dict = {
     ar: {
         pnlSettings:"إعدادات الاشتراك", lblProvider:"مزود الخدمة", optCustom:"تخصيص يدوي",
-        lblTotal:"إجمالي السعة", lblRem:"السعة المتبقية الفعّالة", lblPrice:"التكلفة",
-        lblStart:"الاشتراك", lblExp:"الانتهاء", btnShare:"مشاركة الرابط",
-        tabDash:"المؤشرات الأساسية", tabTools:"المحاكاة والتوقع", stInit:"قيد التجهيز",
-        stInitDesc:"يرجى إدراج المعطيات لتشغيل التحليل.", mSafe:"الاستهلاك الآمن/يوم",
-        mAvg:"المتوسط الفعلي", mCost:"معيار التكلفة (GB)", mForecast:"الموعد الدقيق للنفاد",
-        lblUsed:"الاستهلاك:", lblDays:"انقضى:", lblLeft:"متبقي:", 
-        stGreen:"استهلاك آمن", stGDesc:"معدلك الفعلي يسمح باستمرار الباقة.",
-        stWarn:"تحذير بالاستهلاك", stWDesc:"أنت تتجاوز الحد المسموح. قلل استخدامك.",
-        stCrit:"استنفاد حتمي", stCDesc:"بموجب مسارك الحالي ستتوقف الباقة قبل الموعد.",
-        stExp:"الباقة منتهية", stEDesc:"عذرا، لقد استنفدت السعة أو الأيام.",
-        simTitle:"محاكي الاستهلاك اليومي", simDesc:"تلاعب بالمعدل اليومي لاختبار طول عمر باقتك الافتراضي.", lblDay:"يوم",
-        tlDown:"حاسبة التنزيلات", tlSpeed:"زمن التنزيل المقدر"
+        lblTotal:"السعة الكلية", lblRem:"المتبقي الآن", lblPrice:"السعر",
+        lblStart:"الاشتراك", lblExp:"الانتهاء", btnShare:"نسخ الرابط",
+        tabDash:"المؤشرات", tabTools:"الأدوات",
+        stInit:"جاهز للحساب", stInitDesc:"أدخل الرصيد المتبقي وتاريخ الانتهاء للبدء.",
+        mSafe:"الحد الآمن / يوم", mAvg:"متوسط الاستهلاك", mCost:"تكلفة الـ GB", mForecast:"توقع النفاد",
+        lblUsed:"الاستهلاك الكلي", lblDays:"الأيام المنقضية", lblLeft:"الأيام المتبقية", dPr:"نسبة الاستهلاك",
+        stG:"استهلاك آمن", sdG:"معدلك الفعلي يسمح باستمرار الباقة.",
+        stW:"تحذير بالاستهلاك", sdW:"أنت تتجاوز الحد المسموح. قلل استخدامك.",
+        stC:"خطر النفاد", sdC:"بموجب مسارك الحالي ستتوقف الباقة قبل الموعد.",
+        stE:"الباقة منتهية", sdE:"عذراً، لقد استنفدت السعة أو الأيام.",
+        tlDown:"حاسبة التنزيل", tlSpeed:"وقت التحميل المقدر", txtDays:"أيام", msgOk:"يتبقى: ", msgNo:"ينقص: "
     },
     en: {
-        pnlSettings:"Subscription Config", lblProvider:"ISP Preset", optCustom:"Manual Entry",
-        lblTotal:"Total Quota", lblRem:"Remaining Data", lblPrice:"Total Price",
-        lblStart:"Start Date", lblExp:"Expiry Date", btnShare:"Share State",
-        tabDash:"Analytics Core", tabTools:"Forecasting Tools", stInit:"Standby Mode",
-        stInitDesc:"Awaiting structural parameters for evaluation.", mSafe:"Safe Quota/Day",
-        mAvg:"Actual Mean Rate", mCost:"Unit Cost (GB)", mForecast:"Est. Zero Date",
-        lblUsed:"Consumed:", lblDays:"Elapsed:", lblLeft:"Remaining:", 
-        stGreen:"Optimal Consumption", stGDesc:"Current vector preserves lifecycle.",
-        stWarn:"Elevated Consumption", stWDesc:"Velocity marginally exceeds capacity limits.",
-        stCrit:"Imminent Depletion", stCDesc:"Current rate forces premature failure.",
-        stExp:"Cycle Terminated", stEDesc:"Data allocation or validity exhausted.",
-        simTitle:"Consumption Simulator", simDesc:"Adjust sliding metric to forecast longevity variance.", lblDay:"Day",
-        tlDown:"Volumetric Calculator", tlSpeed:"Throughput Analyzer"
+        pnlSettings:"Configuration", lblProvider:"ISP Preset", optCustom:"Custom Input",
+        lblTotal:"Total Quota", lblRem:"Remaining Now", lblPrice:"Price",
+        lblStart:"Start Date", lblExp:"Expiry Date", btnShare:"Copy Link",
+        tabDash:"Dashboard", tabTools:"Calculators",
+        stInit:"Ready to Calc", stInitDesc:"Enter remaining data & expiry date to begin.",
+        mSafe:"Safe Limit / Day", mAvg:"Avg Usage", mCost:"Cost / GB", mForecast:"Est. Zero Date",
+        lblUsed:"Total Used", lblDays:"Elapsed Days", lblLeft:"Days Left", dPr:"Usage %",
+        stG:"Safe Usage", sdG:"Current trajectory preserves your lifecycle.",
+        stW:"Elevated Usage", sdW:"Velocity exceeds capacity. Monitoring advised.",
+        stC:"Imminent Depletion", sdC:"Current rate forces premature package failure.",
+        stE:"Terminated", sdE:"Data allocation or validity exhausted.",
+        tlDown:"Download Checker", tlSpeed:"Est. DL Time", txtDays:"Days", msgOk:"Remains: ", msgNo:"Deficit: "
     }
 };
 
-let l = localStorage.getItem('dd_lang') || 'ar';
-document.getElementById('langToggle').addEventListener('click', () => {
-    l = l === 'ar' ? 'en' : 'ar';
-    localStorage.setItem('dd_lang', l); applyL();
+let l = localStorage.getItem('dd_l') || 'ar';
+document.getElementById('langToggle').addEventListener('click', function() {
+    l = l==='ar'?'en':'ar'; localStorage.setItem('dd_l', l); appLang();
 });
 
-function applyL() {
-    document.documentElement.lang = l; document.documentElement.dir = l==='ar'?'rtl':'ltr';
-    document.getElementById('langToggle').innerText = l==='ar'?'EN':'AR';
-    document.querySelectorAll('[data-i18n]').forEach(el => { el.innerText = dict[l][el.getAttribute('data-i18n')]; });
-    runDash();
+function appLang() {
+    document.documentElement.lang=l; document.documentElement.dir=l==='ar'?'rtl':'ltr';
+    document.getElementById('langToggle').innerText=l==='ar'?'EN':'AR';
+    
+    // Hardcoded elements translations to avoid huge data attributes
+    ['pnlSettings','lblProvider','optCustom','lblTotal','lblRem','lblPrice','lblStart','lblExp',
+     'btnShare','tabDash','tabTools','mSafe','mAvg','mCost','mForecast','lblUsed','lblDays','lblLeft', 'dPr', 'tlDown', 'tlSpeed'
+    ].forEach(k => { const el=document.getElementById(k); if(el) el.innerText=dict[l][k]; });
+    runLogic();
 }
 
-// Ensure purely english numerals natively outputted by logic
-function fn(v, d=2) { return new Intl.NumberFormat('en-US', {minimumFractionDigits:d, maximumFractionDigits:d}).format(v); }
-function tMB(v, u) { return u==='TB'? v*1048576 : u==='GB'? v*1024 : v; }
-function tAuto(mb) {
-    if(mb >= 1048576) return { v: fn(mb/1048576), u: "TB" };
-    if(mb >= 1024) return { v: fn(mb/1024), u: "GB" };
-    return { v: fn(mb,0), u: "MB" };
-}
-
-const tabs = document.querySelectorAll('.tab-btn');
-tabs.forEach(b => b.addEventListener('click', () => {
-    tabs.forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
     b.classList.add('active'); document.getElementById(b.getAttribute('data-tab')).classList.add('active');
 }));
 
-const els = ['inpProvider','inpTotal','inpUnit','inpRem','inpStart','inpExp','inpPrice'];
-els.forEach(id => document.getElementById(id).addEventListener('input', runDash));
+function fN(num, d=2) { return new Intl.NumberFormat('en-US', {minimumFractionDigits:d, maximumFractionDigits:d}).format(num); }
+function tMB(v, u) { return u==='TB'? v*1048576 : u==='GB'? v*1024 : v; }
+function auto(mb) {
+    if(mb >= 1048576) return {v: fN(mb/1048576), u: "TB"};
+    if(mb >= 1024) return {v: fN(mb/1024), u: "GB"};
+    return {v: fN(mb,0), u: "MB"};
+}
+
+const inp = ['inpTotal','inpRem','inpStart','inpExp','inpPrice'];
+inp.forEach(i => document.getElementById(i).addEventListener('input', runLogic));
+document.getElementById('inpUnit').addEventListener('change', runLogic);
 
 let mChart = null;
 
-function runDash() {
-    saveU();
-    const vTot = parseFloat(document.getElementById('inpTotal').value);
+function runLogic() {
+    const unit = document.getElementById('inpUnit').value;
+    const vTot = parseFloat(document.getElementById('inpTotal').value) || 0;
     const vRem = parseFloat(document.getElementById('inpRem').value);
-    const unt = document.getElementById('inpUnit').value;
-    const pri = parseFloat(document.getElementById('inpPrice').value)||0;
-    
-    const dS = new Date(document.getElementById('inpStart').value); dS.setHours(0,0,0,0);
-    const dE = new Date(document.getElementById('inpExp').value); dE.setHours(0,0,0,0);
-    
-    // Perfect Date Math (Ignore timezone offsets)
-    const dT = new Date(); 
-    dT.setMinutes(dT.getMinutes() - dT.getTimezoneOffset());
-    const realToday = new Date(dT.toISOString().split('T')[0]);
+    const pri = parseFloat(document.getElementById('inpPrice').value) || 0;
+    const expStr = document.getElementById('inpExp').value;
+    const strStr = document.getElementById('inpStart').value;
 
-    if(isNaN(vTot)||isNaN(vRem)||isNaN(dS)||isNaN(dE)) return;
+    const bx = document.getElementById('statusBox'), ic = document.getElementById('stIcon'), tT = document.getElementById('stTitle'), tD = document.getElementById('stDesc');
 
-    const tMB_val = tMB(vTot, unt);
-    const rMB_val = Math.min(tMB(vRem, unt), tMB_val);
-    const uMB_val = tMB_val - rMB_val;
-
-    const ttlD = Math.floor((dE - dS)/86400000) + 1;
-    let pasD = Math.floor((realToday - dS)/86400000);
-    let lefD = Math.floor((dE - realToday)/86400000) + 1;
-
-    if(realToday < dS){ pasD=0; lefD=ttlD; }
-    if(realToday > dE){ pasD=ttlD; lefD=0; }
-
-    const sMB = lefD>0 ? rMB_val/lefD : 0;
-    const aMB = pasD>0 ? uMB_val/pasD : 0;
-
-    let fDat = "--";
-    if(rMB_val<=0 || lefD<=0) fDat = dict[l].stExp;
-    else if(aMB<=0) fDat = "∞";
-    else {
-        const exhaust = new Date(realToday);
-        exhaust.setDate(exhaust.getDate() + (rMB_val/aMB) - 1);
-        fDat = exhaust.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+    // 1. Minimum Viable Logic (Rem + Exp Only)
+    if(isNaN(vRem) || !expStr) {
+        setBx(bx,ic,tT,tD, 'var(--input-bg)', 'var(--text-muted)', 'fa-info-circle', 'stInit', 'stInitDesc');
+        return;
     }
 
-    const cGB = pri>0 ? (pri/(tMB_val/1024)) : 0;
+    const dE = new Date(expStr); dE.setHours(0,0,0,0);
+    const dT = new Date(); dT.setMinutes(dT.getMinutes() - dT.getTimezoneOffset());
+    const dt = new Date(dT.toISOString().split('T')[0]); dt.setHours(0,0,0,0);
 
-    // UI Bindings
-    const oSafe = tAuto(sMB); document.getElementById('valSafe').innerText=oSafe.v; document.getElementById('unitSafe').innerText=`${oSafe.u} / D`;
-    const oAvg = tAuto(aMB); document.getElementById('valAvg').innerText=oAvg.v; document.getElementById('unitAvg').innerText=`${oAvg.u} / D`;
-    document.getElementById('valCost').innerText = fn(cGB);
-    document.getElementById('valForecast').innerText = fDat;
+    const rMB = tMB(vRem, unit);
+    let dL = Math.floor((dE - dt)/86400000) + 1;
+    if(dL < 0) dL = 0;
 
-    const oUsd = tAuto(uMB_val); document.getElementById('outUsed').innerText = `${oUsd.v} ${oUsd.u}`;
-    document.getElementById('outDaysP').innerText = `${pasD}`;
-    document.getElementById('outDaysL').innerText = `${lefD}`;
+    const sfMB = dL>0 ? (rMB/dL) : 0;
+    
+    // 2. Full Logic (if Total & Start are present)
+    let avgMB = 0, uMB = 0, prog = 0, dP = 0, fDate = "--", tMB_v = rMB;
 
-    const bx = document.getElementById('statusBox'); const ic = document.getElementById('stIcon');
-    const bT = document.getElementById('stTitle'); const bD = document.getElementById('stDesc');
+    if(vTot > 0 && strStr) {
+        const dS = new Date(strStr); dS.setHours(0,0,0,0);
+        tMB_v = tMB(vTot, unit);
+        uMB = Math.max(0, tMB_v - rMB);
+        dP = Math.floor((dt - dS)/86400000);
+        if(dP < 1) dP = 1; // Prevent div 0
+        avgMB = uMB / dP;
+        prog = (uMB/tMB_v)*100;
+        
+        if(avgMB > 0 && dL > 0) {
+            const exD = new Date(dt);
+            exD.setDate(exD.getDate() + (rMB/avgMB));
+            fDate = exD.toLocaleDateString('en-GB', {day:'numeric', month:'short'});
+        } else if(avgMB === 0) fDate = "∞";
+    }
 
-    if(rMB_val<=0 || lefD<=0) setSt(bx,ic,bT,bD, 'var(--bg-red)', 'var(--c-red)', 'fa-times', 'stExp', 'stEDesc');
-    else if(aMB<=sMB) setSt(bx,ic,bT,bD, 'var(--bg-green)', 'var(--c-green)', 'fa-check', 'stGreen', 'stGDesc');
-    else if(aMB<=sMB*1.15) setSt(bx,ic,bT,bD, 'var(--bg-warn)', 'var(--c-warn)', 'fa-exclamation-triangle', 'stWarn', 'stWDesc');
-    else setSt(bx,ic,bT,bD, 'var(--bg-red)', 'var(--c-red)', 'fa-radiation', 'stCrit', 'stCDesc');
+    // UI Updates
+    document.getElementById('valSafe').innerText = auto(sfMB).v;
+    document.getElementById('valAvg').innerText = auto(avgMB).v;
+    document.getElementById('valCost').innerText = vTot>0 ? fN(pri/(tMB_v/1024)) : "0.00";
+    document.getElementById('valDate').innerText = fDate;
 
-    draw(uMB_val, rMB_val);
-    runSimTools(rMB_val);
+    document.getElementById('outUsed').innerText = `${auto(uMB).v} ${auto(uMB).u}`;
+    document.getElementById('outDaysP').innerText = dP;
+    document.getElementById('outDaysL').innerText = dL;
+    document.getElementById('outProg').innerText = `${fN(prog,1)}%`;
+
+    // Status Engine
+    if(rMB<=0 || dL<=0) setBx(bx,ic,tT,tD, 'var(--bg-red)', 'var(--c-red)', 'fa-times', 'stE', 'sdE');
+    else if(avgMB === 0 || avgMB <= sfMB) setBx(bx,ic,tT,tD, 'var(--bg-grn)', 'var(--c-grn)', 'fa-check', 'stG', 'sdG');
+    else if(avgMB <= sfMB * 1.15) setBx(bx,ic,tT,tD, 'var(--bg-wrn)', 'var(--c-warn)', 'fa-exclamation-triangle', 'stW', 'sdW');
+    else setBx(bx,ic,tT,tD, 'var(--bg-red)', 'var(--c-red)', 'fa-radiation', 'stC', 'sdC');
+
+    draw(uMB, rMB); saveU(); runTools(rMB);
 }
 
-function setSt(bx, ic, t, d, bg, c, i, tk, dk) {
+function setBx(bx, ic, t, d, bg, c, i, tk, dk) {
     bx.style.backgroundColor = bg; bx.style.borderColor = c; bx.style.color = c;
     ic.className=`fas ${i}`; t.innerText=dict[l][tk]; d.innerText=dict[l][dk];
 }
 
 function draw(u, r) {
     if(u===0 && r===0) r=1;
-    if(mChart) mChart.destroy();
     const isD = document.documentElement.getAttribute('data-theme')==='dark';
+    if(mChart) mChart.destroy();
     mChart = new Chart(document.getElementById('dashChart').getContext('2d'), {
         type: 'doughnut', data: { datasets: [{ data: [u,r], backgroundColor:['#EF4444','#3B82F6'], borderWidth:0 }] },
         options: { cutout: '75%', responsive:true, maintainAspectRatio:false }
     });
 }
 
-// Shareable Base64 String URL Logic
+function runTools(rMB) {
+    const sZ = parseFloat(document.getElementById('inpDown').value);
+    const ms = parseFloat(document.getElementById('inpSpeedMbps').value);
+    const gs = parseFloat(document.getElementById('inpSpeedSize').value);
+    
+    // TL1
+    if(sZ>0 && rMB) {
+        const tgMB = sZ * 1024;
+        const eD = document.getElementById('resDown');
+        if(tgMB <= rMB) { eD.innerText=`${dict[l].msgOk} ${auto(rMB-tgMB).v} ${auto(rMB-tgMB).u}`; eD.style.color="var(--c-grn)";}
+        else { eD.innerText=`${dict[l].msgNo} ${auto(tgMB-rMB).v} ${auto(tgMB-rMB).u}`; eD.style.color="var(--c-red)";}
+    } else document.getElementById('resDown').innerText="--";
+
+    // TL2
+    if(ms>0 && gs>0) {
+        const s = (gs*1024*8)/ms;
+        document.getElementById('resSpeed').innerText = `${Math.floor(s/3600)}H ${Math.floor((s%3600)/60)}M`;
+        document.getElementById('resSpeed').style.color = "var(--primary)";
+    } else document.getElementById('resSpeed').innerText="--";
+}
+
+document.getElementById('inpDown').addEventListener('input', runLogic);
+document.getElementById('inpSpeedMbps').addEventListener('input', runLogic);
+document.getElementById('inpSpeedSize').addEventListener('input', runLogic);
+
+// Presets
+document.getElementById('inpProvider').addEventListener('change', e=>{
+    const v = e.target.value;
+    if(v==='libyana'){ document.getElementById('inpTotal').value=40; document.getElementById('inpPrice').value=40; }
+    if(v==='almadar'){ document.getElementById('inpTotal').value=30; document.getElementById('inpPrice').value=30; }
+    if(v==='ltt'){ document.getElementById('inpTotal').value=100; document.getElementById('inpPrice').value=65; }
+    if(v!=='custom') document.getElementById('inpUnit').value='GB';
+    runLogic();
+});
+
+// Short URL Share (Clean Query String like ?t=40&r=15&e=2024)
 function saveU() {
-    const s = els.map(id=>document.getElementById(id).value);
-    const enc = btoa(encodeURIComponent(JSON.stringify(s)));
-    try{ window.history.replaceState({},'', `?d=${enc}`); } catch(e){}
-    localStorage.setItem('dd_cache', enc);
+    const p = new URLSearchParams();
+    const map = {inpTotal:'t', inpUnit:'u', inpRem:'r', inpStart:'s', inpExp:'e', inpPrice:'p'};
+    for(const [id, key] of Object.entries(map)){
+        const v = document.getElementById(id).value;
+        if(v && v!=='GB') p.set(key, v);
+    }
+    const q = p.toString();
+    try { window.history.replaceState({}, '', q ? '?'+q : window.location.pathname); } catch(e){}
+    localStorage.setItem('dd_s', JSON.stringify(Object.fromEntries(p)));
 }
 
 function loadU() {
-    const p = new URLSearchParams(window.location.search).get('d') || localStorage.getItem('dd_cache');
-    if(p) {
+    appLang();
+    const map = {t:'inpTotal', u:'inpUnit', r:'inpRem', s:'inpStart', e:'inpExp', p:'inpPrice'};
+    const params = new URLSearchParams(window.location.search);
+    let loaded = false;
+    params.forEach((val, key) => { if(map[key]) { document.getElementById(map[key]).value = val; loaded=true; } });
+    
+    if(!loaded) {
         try {
-            const arr = JSON.parse(decodeURIComponent(atob(p)));
-            els.forEach((id,i) => document.getElementById(id).value = arr[i]);
+            const s = JSON.parse(localStorage.getItem('dd_s') || '{}');
+            for(const [k, v] of Object.entries(s)) { if(map[k]) document.getElementById(map[k]).value = v; }
         } catch(e){}
     }
-    applyL();
+    runLogic();
 }
-
-document.getElementById('btnReset').addEventListener('click', ()=>{
-    els.forEach(id=>document.getElementById(id).value=''); 
-    localStorage.removeItem('dd_cache'); window.history.replaceState({},'', '?'); location.reload();
-});
 
 document.getElementById('btnShare').addEventListener('click', function(){
     navigator.clipboard.writeText(window.location.href);
-    this.innerHTML=`<i class="fas fa-check"></i>`; setTimeout(()=>this.innerHTML=`<i class="fas fa-link"></i> <span data-i18n="btnShare">${dict[l].btnShare}</span>`, 1500);
+    const oi = this.innerHTML; this.innerHTML = '<i class="fas fa-check"></i>';
+    setTimeout(()=> this.innerHTML=oi, 1500);
 });
 
-// Providers preset logic
-document.getElementById('inpProvider').addEventListener('change', e=>{
-    const v = e.target.value;
-    if(v==='libyana') { document.getElementById('inpTotal').value=40; document.getElementById('inpPrice').value=40; document.getElementById('inpUnit').value='GB'; }
-    if(v==='almadar') { document.getElementById('inpTotal').value=30; document.getElementById('inpPrice').value=30; document.getElementById('inpUnit').value='GB'; }
-    if(v==='ltt') { document.getElementById('inpTotal').value=100; document.getElementById('inpPrice').value=65; document.getElementById('inpUnit').value='GB'; }
-    runDash();
+document.getElementById('btnReset').addEventListener('click', ()=>{
+    inp.forEach(i=>document.getElementById(i).value='');
+    document.getElementById('inpProvider').value='custom';
+    localStorage.removeItem('dd_s');
+    window.location.search='';
 });
-
-// --- Smart Tools Simulation Logic ---
-const slSim = document.getElementById('simSlider');
-const slTxt = document.getElementById('simVal');
-const outSim = document.getElementById('simResult');
-const inpDn = document.getElementById('inpDown');
-const oDn = document.getElementById('resDown');
-const mS = document.getElementById('inpSpeedMbps');
-const gS = document.getElementById('inpSpeedSize');
-const oS = document.getElementById('resSpeed');
-
-[slSim, inpDn, mS, gS].forEach(el => el.addEventListener('input', () => runSimTools()));
-
-function runSimTools(remMB_cache = 0) {
-    if(remMB_cache===0) {
-        const vRem = parseFloat(document.getElementById('inpRem').value);
-        if(!isNaN(vRem)) remMB_cache = Math.min(tMB(vRem, document.getElementById('inpUnit').value), tMB(parseFloat(document.getElementById('inpTotal').value), document.getElementById('inpUnit').value));
-    }
-    if(!remMB_cache || isNaN(remMB_cache)) return;
-
-    // Simulation Slider
-    const simGB = parseFloat(slSim.value);
-    slTxt.innerText = fn(simGB, 1);
-    const surv = (remMB_cache/1024) / simGB;
-    outSim.innerText = `${fn(surv, 0)} ${dict[l].txtDays}`;
-    
-    // Download Calc
-    const tg = parseFloat(inpDn.value)*1024;
-    if(!isNaN(tg) && tg > 0) {
-        oDn.innerText = tg <= remMB_cache ? `Safe: Remains ${tAuto(remMB_cache-tg).v} ${tAuto(remMB_cache-tg).u}` : `Deficit: Need ${tAuto(tg-remMB_cache).v} ${tAuto(tg-remMB_cache).u}`;
-        oDn.style.color = tg<=remMB_cache ? 'var(--c-green)' : 'var(--c-red)';
-    }
-
-    // Speed Calc
-    const ms = parseFloat(mS.value), gs = parseFloat(gS.value);
-    if(!isNaN(ms) && !isNaN(gs) && ms>0) {
-        const secs = (gs * 1024 * 8) / ms;
-        const h = Math.floor(secs / 3600); const m = Math.floor((secs % 3600) / 60);
-        oS.innerText = `${h}H ${m}M`; oS.style.color="var(--primary)";
-    }
-}
 
 loadU();
