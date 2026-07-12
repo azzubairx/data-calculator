@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azzubair | DataDash - منصة إدارة البيانات</title>
+    
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="referrer" content="strict-origin-when-downgrade">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- الخط الإنجليزي والأيقونات -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- مكتبة الرسوم البيانية -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- ملف التنسيق -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- ضبط الثيم لتجنب الوميض -->
+    <script>
+        const savedTheme = localStorage.getItem('theme');
+        const currentTheme = savedTheme ? savedTheme : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', currentTheme);
+    </script>
+</head>
+<body>
+
+    <!-- شريط التنقل الرئيسي -->
+    <nav id="navbar">
+        <div class="container">
+            <a href="https://azzubair.ly" class="logo">
+                <i class="fas fa-chart-network"></i> DataDash
+            </a>
+            <div class="nav-controls">
+                <button class="icon-btn" id="themeToggle" aria-label="Toggle Theme"><i class="fas fa-moon"></i></button>
+                <button class="lang-switch" id="langToggle" aria-label="Toggle Language">EN</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="dashboard-container">
+        
+        <!-- لوحة الإعدادات والإدخال -->
+        <aside class="sidebar glass-panel">
+            <div class="panel-header">
+                <i class="fas fa-sliders-h"></i>
+                <h2 data-i18n="pnlSettings">إعدادات الاشتراك</h2>
+            </div>
+            
+            <div class="form-group">
+                <label data-i18n="lblProvider">مزود الخدمة (القوالب الجاهزة)</label>
+                <select id="inpProvider">
+                    <option value="custom" data-i18n="optCustom">تخصيص يدوي</option>
+                    <option value="libyana">Libyana</option>
+                    <option value="almadar">Almadar Aljadid</option>
+                    <option value="ltt">LTT 4G / Fiber</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="lblTotal">إجمالي السعة (Total Quota)</label>
+                <div class="input-row">
+                    <input type="number" id="inpTotal" placeholder="0" min="0" step="any">
+                    <select id="inpUnit">
+                        <option value="GB">GB</option>
+                        <option value="MB">MB</option>
+                        <option value="TB">TB</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="lblRem">السعة المتبقية الفعّالة</label>
+                <input type="number" id="inpRem" placeholder="0" min="0" step="any">
+            </div>
+
+            <div class="input-row">
+                <div class="form-group" style="flex: 1;">
+                    <label data-i18n="lblStart">تاريخ التفعيل</label>
+                    <input type="date" id="inpStart">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label data-i18n="lblExp">تاريخ الانتهاء</label>
+                    <input type="date" id="inpExp">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="lblPrice">سعر الباقة الإجمالي (اختياري)</label>
+                <input type="number" id="inpPrice" placeholder="0.00">
+            </div>
+
+            <div class="actions-row">
+                <button class="btn btn-outline" id="btnShare" title="مشاركة الإعدادات">
+                    <i class="fas fa-share-alt"></i> <span data-i18n="btnShare">مشاركة</span>
+                </button>
+                <button class="btn btn-outline text-red" id="btnReset" title="إعادة تهيئة البيانات">
+                    <i class="fas fa-trash-restore"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- مساحة العمل الرئيسية -->
+        <section class="main-content">
+            
+            <!-- أزرار التبويبات -->
+            <div class="tabs-nav glass-panel">
+                <button class="tab-btn active" data-tab="tab-dashboard">
+                    <i class="fas fa-chart-line"></i> <span data-i18n="tabDash">المؤشرات الحيوية</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-tools">
+                    <i class="fas fa-toolbox"></i> <span data-i18n="tabTools">الأدوات والحواسب</span>
+                </button>
+            </div>
+
+            <!-- التبويب 1: لوحة التحكم المركزية -->
+            <div id="tab-dashboard" class="tab-content active">
+                
+                <div class="status-banner" id="statusBanner">
+                    <i class="fas fa-info-circle status-icon" id="statusIcon"></i>
+                    <div class="status-text">
+                        <h3 id="statusTitle" data-i18n="statPending">قيد الانتظار</h3>
+                        <p id="statusDesc" data-i18n="statPendingDesc">يرجى إدراج المعطيات لتوليد التحليل.</p>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card primary-border">
+                        <span class="m-label" data-i18n="mSafeLimit">معدل الاستهلاك الآمن / يوم</span>
+                        <span class="m-value" id="valSafe">0.00</span>
+                        <span class="m-unit" id="unitSafe">MB</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="m-label" data-i18n="mAvgLimit">متوسط الاستهلاك الفعلي</span>
+                        <span class="m-value" id="valAvg">0.00</span>
+                        <span class="m-unit" id="unitAvg">MB</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="m-label" data-i18n="mForecast">التوقع الزمني للنفاد</span>
+                        <span class="m-value text-medium" id="valForecast">--</span>
+                        <span class="m-unit" id="lblForecastSub">حسب المعدل الحالي</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="m-label" data-i18n="mCost">مؤشر التكلفة الاقتصادية</span>
+                        <span class="m-value" id="valCost">0.00</span>
+                        <span class="m-unit" data-i18n="mCostUnit">وحدة نقدية / GB</span>
+                    </div>
+                </div>
+
+                <div class="chart-section glass-panel">
+                    <div class="chart-wrapper">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                    <div class="chart-stats">
+                        <div class="stat-line">
+                            <span data-i18n="txtUsedData">إجمالي البيانات المستهلكة</span>
+                            <strong id="stUsed">0 GB</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span data-i18n="txtDaysLeft">المدة الزمنية المتبقية</span>
+                            <strong id="stDaysLeft">0</strong>
+                        </div>
+                        <div class="stat-line">
+                            <span data-i18n="txtProg">النسبة المئوية للاستهلاك</span>
+                            <strong id="stProg">0%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- التبويب 2: الأدوات الإضافية -->
+            <div id="tab-tools" class="tab-content">
+                <div class="tools-grid">
+                    
+                    <!-- أداة 1: حاسبة التحميل -->
+                    <div class="tool-card glass-panel">
+                        <h3><i class="fas fa-download"></i> <span data-i18n="tldownTitle">حاسبة تنزيل الملفات</span></h3>
+                        <p data-i18n="tldownDesc">التحقق من كفاية الرصيد قبل الشروع في التنزيل.</p>
+                        <div class="form-group mt-1">
+                            <label data-i18n="tlFileSize">حجم الملف المستهدف (GB)</label>
+                            <input type="number" id="inpTlSize" placeholder="0">
+                        </div>
+                        <div class="tl-result" id="resTlDown">--</div>
+                    </div>
+
+                    <!-- أداة 2: حاسبة البث -->
+                    <div class="tool-card glass-panel">
+                        <h3><i class="fas fa-video"></i> <span data-i18n="tlvidTitle">حاسبة بث الفيديو</span></h3>
+                        <p data-i18n="tlvidDesc">تقدير السعة المتبقية للاستمرار في المشاهدة.</p>
+                        <div class="form-group mt-1">
+                            <label data-i18n="tlVidQual">جودة البث المستهدفة</label>
+                            <select id="inpTlQual">
+                                <option value="0.5">480p (Standard)</option>
+                                <option value="1.5" selected>720p (HD)</option>
+                                <option value="3.0">1080p (FHD)</option>
+                                <option value="7.0">4K (UHD)</option>
+                            </select>
+                        </div>
+                        <div class="tl-result" id="resTlVid">--</div>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- ربط ملفات الجافاسكربت -->
+    <script src="js/i18n.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
