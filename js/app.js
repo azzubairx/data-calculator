@@ -1,289 +1,240 @@
 /* ============================================================
-   المنطق البرمجي (DataDash Core Logic)
+   DataDash - Core JS Logic
    ============================================================ */
 
-// 1. Theme Configuration
-const toggle = document.getElementById('themeToggle');
-const icon = toggle.querySelector('i');
-if (document.documentElement.getAttribute('data-theme') === 'light') icon.className = 'fas fa-sun';
-toggle.addEventListener('click', () => {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const newTheme = isDark ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-    localStorage.setItem('theme', newTheme);
-    if(mainChart) {
-        mainChart.options.plugins.legend.labels.color = newTheme==='dark' ? '#F8FAFC' : '#0F172A';
-        mainChart.update();
+const tTgl = document.getElementById('themeToggle');
+const tIcon = tTgl.querySelector('i');
+tTgl.addEventListener('click', () => {
+    const n = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', n);
+    tIcon.className = n === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+    localStorage.setItem('theme', n);
+    if(mChart) { mChart.options.plugins.legend.labels.color = n==='dark'?'#F8FAFC':'#0F172A'; mChart.update(); }
+});
+
+const dict = {
+    ar: {
+        pnlSettings:"إعدادات الاشتراك", lblProvider:"مزود الخدمة", optCustom:"تخصيص يدوي",
+        lblTotal:"إجمالي السعة", lblRem:"السعة المتبقية الفعّالة", lblPrice:"التكلفة",
+        lblStart:"الاشتراك", lblExp:"الانتهاء", btnShare:"مشاركة الرابط",
+        tabDash:"المؤشرات الأساسية", tabTools:"المحاكاة والتوقع", stInit:"قيد التجهيز",
+        stInitDesc:"يرجى إدراج المعطيات لتشغيل التحليل.", mSafe:"الاستهلاك الآمن/يوم",
+        mAvg:"المتوسط الفعلي", mCost:"معيار التكلفة (GB)", mForecast:"الموعد الدقيق للنفاد",
+        lblUsed:"الاستهلاك:", lblDays:"انقضى:", lblLeft:"متبقي:", 
+        stGreen:"استهلاك آمن", stGDesc:"معدلك الفعلي يسمح باستمرار الباقة.",
+        stWarn:"تحذير بالاستهلاك", stWDesc:"أنت تتجاوز الحد المسموح. قلل استخدامك.",
+        stCrit:"استنفاد حتمي", stCDesc:"بموجب مسارك الحالي ستتوقف الباقة قبل الموعد.",
+        stExp:"الباقة منتهية", stEDesc:"عذرا، لقد استنفدت السعة أو الأيام.",
+        simTitle:"محاكي الاستهلاك اليومي", simDesc:"تلاعب بالمعدل اليومي لاختبار طول عمر باقتك الافتراضي.", lblDay:"يوم",
+        tlDown:"حاسبة التنزيلات", tlSpeed:"زمن التنزيل المقدر"
+    },
+    en: {
+        pnlSettings:"Subscription Config", lblProvider:"ISP Preset", optCustom:"Manual Entry",
+        lblTotal:"Total Quota", lblRem:"Remaining Data", lblPrice:"Total Price",
+        lblStart:"Start Date", lblExp:"Expiry Date", btnShare:"Share State",
+        tabDash:"Analytics Core", tabTools:"Forecasting Tools", stInit:"Standby Mode",
+        stInitDesc:"Awaiting structural parameters for evaluation.", mSafe:"Safe Quota/Day",
+        mAvg:"Actual Mean Rate", mCost:"Unit Cost (GB)", mForecast:"Est. Zero Date",
+        lblUsed:"Consumed:", lblDays:"Elapsed:", lblLeft:"Remaining:", 
+        stGreen:"Optimal Consumption", stGDesc:"Current vector preserves lifecycle.",
+        stWarn:"Elevated Consumption", stWDesc:"Velocity marginally exceeds capacity limits.",
+        stCrit:"Imminent Depletion", stCDesc:"Current rate forces premature failure.",
+        stExp:"Cycle Terminated", stEDesc:"Data allocation or validity exhausted.",
+        simTitle:"Consumption Simulator", simDesc:"Adjust sliding metric to forecast longevity variance.", lblDay:"Day",
+        tlDown:"Volumetric Calculator", tlSpeed:"Throughput Analyzer"
     }
-});
-
-// 2. Language Initialization
-let currentLang = localStorage.getItem('calc_lang') || 'ar';
-const langBtn = document.getElementById('langToggle');
-
-function applyLanguage() {
-    document.documentElement.lang = currentLang;
-    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-    langBtn.innerText = currentLang === 'ar' ? 'EN' : 'AR';
-    
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if(dict[currentLang][key]) el.innerText = dict[currentLang][key];
-    });
-    
-    document.getElementById('lblForecastSub').innerText = currentLang === 'ar' ? "حسب المعدل الحالي" : "Based on velocity";
-    compileDashboard();
-}
-langBtn.addEventListener('click', () => {
-    currentLang = currentLang === 'ar' ? 'en' : 'ar';
-    localStorage.setItem('calc_lang', currentLang);
-    applyLanguage();
-});
-
-// 3. Tab Switching
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
-    });
-});
-
-// 4. Utility Functions
-// FORCES numeric values to be displayed as 0-9 universally. Never Eastern Arabic (١٢٣)
-function fNum(val, decimals = 2) {
-    return new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(val);
-}
-function getLocalToday() {
-    const d = new Date();
-    return new Date(d - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-}
-function toMB(val, unit) {
-    if(unit === 'TB') return val * 1048576;
-    if(unit === 'GB') return val * 1024;
-    return val;
-}
-function formatAutoUnit(mbVal) {
-    if(mbVal >= 1048576) return { v: fNum(mbVal / 1048576), u: "TB" };
-    if(mbVal >= 1024) return { v: fNum(mbVal / 1024), u: "GB" };
-    return { v: fNum(mbVal, 0), u: "MB" };
-}
-
-// 5. Providers Templates
-const providers = {
-    libyana: { total: 40, unit: 'GB', price: 40 },
-    almadar: { total: 30, unit: 'GB', price: 30 },
-    ltt: { total: 100, unit: 'GB', price: 65 }
 };
-document.getElementById('inpProvider').addEventListener('change', function(e) {
-    const p = providers[e.target.value];
-    if(p) {
-        document.getElementById('inpTotal').value = p.total;
-        document.getElementById('inpUnit').value = p.unit;
-        document.getElementById('inpPrice').value = p.price;
-        compileDashboard();
-    }
+
+let l = localStorage.getItem('dd_lang') || 'ar';
+document.getElementById('langToggle').addEventListener('click', () => {
+    l = l === 'ar' ? 'en' : 'ar';
+    localStorage.setItem('dd_lang', l); applyL();
 });
 
-// 6. Chart Initialization
-let mainChart = null;
-function updateChart(used, rem) {
-    const ctx = document.getElementById('mainChart').getContext('2d');
-    const tCol = document.documentElement.getAttribute('data-theme') === 'dark' ? '#F8FAFC' : '#0F172A';
-    if(mainChart) mainChart.destroy();
-    
-    // Hide chart visually if data is zero to prevent broken UI
-    if (used === 0 && rem === 0) rem = 1; 
-
-    mainChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: [dict[currentLang].txtUsedData, dict[currentLang].lblRem],
-            datasets: [{
-                data: [used, rem],
-                backgroundColor: ['#EF4444', '#3B82F6'],
-                borderWidth: 0,
-                cutout: '75%'
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { color: tCol, font: {family: 'inherit'} } } }
-        }
-    });
+function applyL() {
+    document.documentElement.lang = l; document.documentElement.dir = l==='ar'?'rtl':'ltr';
+    document.getElementById('langToggle').innerText = l==='ar'?'EN':'AR';
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.innerText = dict[l][el.getAttribute('data-i18n')]; });
+    runDash();
 }
 
-// 7. Core Compilation Logic
-const inps = ['inpTotal','inpUnit','inpRem','inpPrice','inpStart','inpExp'];
-inps.forEach(id => document.getElementById(id).addEventListener('input', () => {
-    document.getElementById('inpProvider').value = 'custom';
-    compileDashboard();
+// Ensure purely english numerals natively outputted by logic
+function fn(v, d=2) { return new Intl.NumberFormat('en-US', {minimumFractionDigits:d, maximumFractionDigits:d}).format(v); }
+function tMB(v, u) { return u==='TB'? v*1048576 : u==='GB'? v*1024 : v; }
+function tAuto(mb) {
+    if(mb >= 1048576) return { v: fn(mb/1048576), u: "TB" };
+    if(mb >= 1024) return { v: fn(mb/1024), u: "GB" };
+    return { v: fn(mb,0), u: "MB" };
+}
+
+const tabs = document.querySelectorAll('.tab-btn');
+tabs.forEach(b => b.addEventListener('click', () => {
+    tabs.forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); document.getElementById(b.getAttribute('data-tab')).classList.add('active');
 }));
 
-function compileDashboard() {
-    const vTotal = parseFloat(document.getElementById('inpTotal').value);
+const els = ['inpProvider','inpTotal','inpUnit','inpRem','inpStart','inpExp','inpPrice'];
+els.forEach(id => document.getElementById(id).addEventListener('input', runDash));
+
+let mChart = null;
+
+function runDash() {
+    saveU();
+    const vTot = parseFloat(document.getElementById('inpTotal').value);
     const vRem = parseFloat(document.getElementById('inpRem').value);
-    const vUnit = document.getElementById('inpUnit').value;
-    const vPrice = parseFloat(document.getElementById('inpPrice').value) || 0;
+    const unt = document.getElementById('inpUnit').value;
+    const pri = parseFloat(document.getElementById('inpPrice').value)||0;
     
-    const dStart = new Date(document.getElementById('inpStart').value);
-    const dExp = new Date(document.getElementById('inpExp').value);
-    const dToday = new Date(getLocalToday());
+    const dS = new Date(document.getElementById('inpStart').value); dS.setHours(0,0,0,0);
+    const dE = new Date(document.getElementById('inpExp').value); dE.setHours(0,0,0,0);
+    
+    // Perfect Date Math (Ignore timezone offsets)
+    const dT = new Date(); 
+    dT.setMinutes(dT.getMinutes() - dT.getTimezoneOffset());
+    const realToday = new Date(dT.toISOString().split('T')[0]);
 
-    // Basic Validation
-    if(isNaN(vTotal) || isNaN(vRem) || isNaN(dStart) || isNaN(dExp)) return;
+    if(isNaN(vTot)||isNaN(vRem)||isNaN(dS)||isNaN(dE)) return;
 
-    dStart.setHours(0,0,0,0); dExp.setHours(0,0,0,0); dToday.setHours(0,0,0,0);
+    const tMB_val = tMB(vTot, unt);
+    const rMB_val = Math.min(tMB(vRem, unt), tMB_val);
+    const uMB_val = tMB_val - rMB_val;
 
-    const totalMB = toMB(vTotal, vUnit);
-    const remMB = Math.min(toMB(vRem, vUnit), totalMB); // logical ceiling
-    const usedMB = totalMB - remMB;
+    const ttlD = Math.floor((dE - dS)/86400000) + 1;
+    let pasD = Math.floor((realToday - dS)/86400000);
+    let lefD = Math.floor((dE - realToday)/86400000) + 1;
 
-    const totalDays = Math.ceil((dExp - dStart) / 86400000) + 1;
-    let daysPassed = Math.ceil((dToday - dStart) / 86400000);
-    let daysLeft = Math.ceil((dExp - dToday) / 86400000) + 1;
+    if(realToday < dS){ pasD=0; lefD=ttlD; }
+    if(realToday > dE){ pasD=ttlD; lefD=0; }
 
-    // Temporal boundaries
-    if(dToday < dStart) { daysPassed = 0; daysLeft = totalDays; }
-    if(dToday > dExp) { daysPassed = totalDays; daysLeft = 0; }
+    const sMB = lefD>0 ? rMB_val/lefD : 0;
+    const aMB = pasD>0 ? uMB_val/pasD : 0;
 
-    const safeMB = daysLeft > 0 ? (remMB / daysLeft) : 0;
-    const avgMB = daysPassed > 0 ? (usedMB / daysPassed) : 0;
-
-    // Forecasting
-    let fcText = "--";
-    if(remMB <= 0 || daysLeft <= 0) {
-        fcText = dict[currentLang].stExp;
-    } else if (avgMB <= 0) {
-        fcText = dict[currentLang].txtNever;
-    } else {
-        const daysToDeath = remMB / avgMB;
-        const exhaust = new Date(dToday);
-        exhaust.setDate(dToday.getDate() + daysToDeath);
-        // Force en-US numbers even in Arabic locales
-        fcText = exhaust.toLocaleDateString(currentLang === 'ar' ? 'ar-LY' : 'en-GB', { day: 'numeric', month: 'short' });
-        // Clean Arabic string if local browser pushes hindi nums
-        fcText = fcText.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+    let fDat = "--";
+    if(rMB_val<=0 || lefD<=0) fDat = dict[l].stExp;
+    else if(aMB<=0) fDat = "∞";
+    else {
+        const exhaust = new Date(realToday);
+        exhaust.setDate(exhaust.getDate() + (rMB_val/aMB) - 1);
+        fDat = exhaust.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
     }
 
-    // Cost logic
-    const costPerGB = vPrice > 0 ? (vPrice / (totalMB / 1024)) : 0;
-    
-    // UI Update - Formatting explicitly with fNum() to block Eastern numerals
-    const fmtSafe = formatAutoUnit(safeMB);
-    document.getElementById('valSafe').innerText = fmtSafe.v;
-    document.getElementById('unitSafe').innerText = fmtSafe.u;
+    const cGB = pri>0 ? (pri/(tMB_val/1024)) : 0;
 
-    const fmtAvg = formatAutoUnit(avgMB);
-    document.getElementById('valAvg').innerText = fmtAvg.v;
-    document.getElementById('unitAvg').innerText = fmtAvg.u;
+    // UI Bindings
+    const oSafe = tAuto(sMB); document.getElementById('valSafe').innerText=oSafe.v; document.getElementById('unitSafe').innerText=`${oSafe.u} / D`;
+    const oAvg = tAuto(aMB); document.getElementById('valAvg').innerText=oAvg.v; document.getElementById('unitAvg').innerText=`${oAvg.u} / D`;
+    document.getElementById('valCost').innerText = fn(cGB);
+    document.getElementById('valForecast').innerText = fDat;
 
-    document.getElementById('valForecast').innerText = fcText;
-    document.getElementById('valCost').innerText = fNum(costPerGB, 2);
+    const oUsd = tAuto(uMB_val); document.getElementById('outUsed').innerText = `${oUsd.v} ${oUsd.u}`;
+    document.getElementById('outDaysP').innerText = `${pasD}`;
+    document.getElementById('outDaysL').innerText = `${lefD}`;
 
-    const fmtUsed = formatAutoUnit(usedMB);
-    document.getElementById('stUsed').innerText = `${fmtUsed.v} ${fmtUsed.u}`;
-    document.getElementById('stDaysLeft').innerText = `${fNum(daysLeft,0)} ${dict[currentLang].txtDays}`;
-    document.getElementById('stProg').innerText = `${fNum((usedMB/totalMB)*100, 1)}%`;
+    const bx = document.getElementById('statusBox'); const ic = document.getElementById('stIcon');
+    const bT = document.getElementById('stTitle'); const bD = document.getElementById('stDesc');
 
-    // Visual Status Evaluation
-    const banner = document.getElementById('statusBanner');
-    const bIcon = document.getElementById('statusIcon');
-    const bTitle = document.getElementById('statusTitle');
-    const bDesc = document.getElementById('statusDesc');
+    if(rMB_val<=0 || lefD<=0) setSt(bx,ic,bT,bD, 'var(--bg-red)', 'var(--c-red)', 'fa-times', 'stExp', 'stEDesc');
+    else if(aMB<=sMB) setSt(bx,ic,bT,bD, 'var(--bg-green)', 'var(--c-green)', 'fa-check', 'stGreen', 'stGDesc');
+    else if(aMB<=sMB*1.15) setSt(bx,ic,bT,bD, 'var(--bg-warn)', 'var(--c-warn)', 'fa-exclamation-triangle', 'stWarn', 'stWDesc');
+    else setSt(bx,ic,bT,bD, 'var(--bg-red)', 'var(--c-red)', 'fa-radiation', 'stCrit', 'stCDesc');
 
-    banner.className = 'status-banner'; // reset
-    if (remMB <= 0 || daysLeft <= 0) {
-        setSt(banner, bIcon, bTitle, bDesc, 'var(--status-crit-bg)', 'var(--status-crit)', 'fa-times-circle', dict[currentLang].stExp, dict[currentLang].stExpDesc);
-    } else if (avgMB <= safeMB) {
-        setSt(banner, bIcon, bTitle, bDesc, 'var(--status-safe-bg)', 'var(--status-safe)', 'fa-check-circle', dict[currentLang].stSafe, dict[currentLang].stSafeDesc);
-    } else if (avgMB <= safeMB * 1.2) {
-        setSt(banner, bIcon, bTitle, bDesc, 'var(--status-warn-bg)', 'var(--status-warn)', 'fa-exclamation-triangle', dict[currentLang].stWarn, dict[currentLang].stWarnDesc);
-    } else {
-        setSt(banner, bIcon, bTitle, bDesc, 'var(--status-crit-bg)', 'var(--status-crit)', 'fa-radiation', dict[currentLang].stCrit, dict[currentLang].stCritDesc);
-    }
-
-    updateChart(usedMB, remMB);
-    saveState();
-    evalTools(); // Sync mini tools
+    draw(uMB_val, rMB_val);
+    runSimTools(rMB_val);
 }
 
-function setSt(el, iEl, tEl, dEl, bg, col, ic, tT, dT) {
-    el.style.backgroundColor = bg; el.style.color = col; el.style.borderColor = col;
-    iEl.className = `fas ${ic} status-icon`; tEl.innerText = tT; dEl.innerText = dT;
+function setSt(bx, ic, t, d, bg, c, i, tk, dk) {
+    bx.style.backgroundColor = bg; bx.style.borderColor = c; bx.style.color = c;
+    ic.className=`fas ${i}`; t.innerText=dict[l][tk]; d.innerText=dict[l][dk];
 }
 
-// 8. State Mgmt (URL & Storage)
-function saveState() {
-    const s = {};
-    inps.forEach(id => s[id] = document.getElementById(id).value);
-    localStorage.setItem('dd_state', JSON.stringify(s));
-    try { window.history.replaceState({}, '', `?${new URLSearchParams(s)}`); } catch(e){}
-}
-function loadState() {
-    const p = new URLSearchParams(window.location.search);
-    let loaded = false;
-    inps.forEach(id => {
-        if(p.has(id)) { document.getElementById(id).value = p.get(id); loaded = true; }
+function draw(u, r) {
+    if(u===0 && r===0) r=1;
+    if(mChart) mChart.destroy();
+    const isD = document.documentElement.getAttribute('data-theme')==='dark';
+    mChart = new Chart(document.getElementById('dashChart').getContext('2d'), {
+        type: 'doughnut', data: { datasets: [{ data: [u,r], backgroundColor:['#EF4444','#3B82F6'], borderWidth:0 }] },
+        options: { cutout: '75%', responsive:true, maintainAspectRatio:false }
     });
-    if(!loaded) {
-        const s = JSON.parse(localStorage.getItem('dd_state'));
-        if(s) inps.forEach(id => { if(s[id]) document.getElementById(id).value = s[id]; });
-    }
-    applyLanguage();
 }
 
-document.getElementById('btnReset').addEventListener('click', () => {
-    inps.forEach(id => document.getElementById(id).value = '');
-    document.getElementById('inpProvider').value = 'custom';
-    localStorage.removeItem('dd_state');
-    window.history.replaceState({}, '', window.location.pathname);
-    location.reload();
+// Shareable Base64 String URL Logic
+function saveU() {
+    const s = els.map(id=>document.getElementById(id).value);
+    const enc = btoa(encodeURIComponent(JSON.stringify(s)));
+    try{ window.history.replaceState({},'', `?d=${enc}`); } catch(e){}
+    localStorage.setItem('dd_cache', enc);
+}
+
+function loadU() {
+    const p = new URLSearchParams(window.location.search).get('d') || localStorage.getItem('dd_cache');
+    if(p) {
+        try {
+            const arr = JSON.parse(decodeURIComponent(atob(p)));
+            els.forEach((id,i) => document.getElementById(id).value = arr[i]);
+        } catch(e){}
+    }
+    applyL();
+}
+
+document.getElementById('btnReset').addEventListener('click', ()=>{
+    els.forEach(id=>document.getElementById(id).value=''); 
+    localStorage.removeItem('dd_cache'); window.history.replaceState({},'', '?'); location.reload();
 });
 
-document.getElementById('btnShare').addEventListener('click', function() {
+document.getElementById('btnShare').addEventListener('click', function(){
     navigator.clipboard.writeText(window.location.href);
-    const t = this.innerHTML;
-    this.innerHTML = `<i class="fas fa-check"></i>`;
-    setTimeout(() => this.innerHTML = t, 1500);
+    this.innerHTML=`<i class="fas fa-check"></i>`; setTimeout(()=>this.innerHTML=`<i class="fas fa-link"></i> <span data-i18n="btnShare">${dict[l].btnShare}</span>`, 1500);
 });
 
-// 9. Tools Calculators Logic
-document.getElementById('inpTlSize').addEventListener('input', evalTools);
-document.getElementById('inpTlQual').addEventListener('change', evalTools);
+// Providers preset logic
+document.getElementById('inpProvider').addEventListener('change', e=>{
+    const v = e.target.value;
+    if(v==='libyana') { document.getElementById('inpTotal').value=40; document.getElementById('inpPrice').value=40; document.getElementById('inpUnit').value='GB'; }
+    if(v==='almadar') { document.getElementById('inpTotal').value=30; document.getElementById('inpPrice').value=30; document.getElementById('inpUnit').value='GB'; }
+    if(v==='ltt') { document.getElementById('inpTotal').value=100; document.getElementById('inpPrice').value=65; document.getElementById('inpUnit').value='GB'; }
+    runDash();
+});
 
-function evalTools() {
-    const remMB = toMB(parseFloat(document.getElementById('inpRem').value), document.getElementById('inpUnit').value);
-    const eDown = document.getElementById('resTlDown');
-    const eVid = document.getElementById('resTlVid');
+// --- Smart Tools Simulation Logic ---
+const slSim = document.getElementById('simSlider');
+const slTxt = document.getElementById('simVal');
+const outSim = document.getElementById('simResult');
+const inpDn = document.getElementById('inpDown');
+const oDn = document.getElementById('resDown');
+const mS = document.getElementById('inpSpeedMbps');
+const gS = document.getElementById('inpSpeedSize');
+const oS = document.getElementById('resSpeed');
 
-    if(isNaN(remMB) || remMB <= 0) {
-        eDown.innerText = "--"; eVid.innerText = "--"; return;
+[slSim, inpDn, mS, gS].forEach(el => el.addEventListener('input', () => runSimTools()));
+
+function runSimTools(remMB_cache = 0) {
+    if(remMB_cache===0) {
+        const vRem = parseFloat(document.getElementById('inpRem').value);
+        if(!isNaN(vRem)) remMB_cache = Math.min(tMB(vRem, document.getElementById('inpUnit').value), tMB(parseFloat(document.getElementById('inpTotal').value), document.getElementById('inpUnit').value));
     }
+    if(!remMB_cache || isNaN(remMB_cache)) return;
 
-    // Down Tool
-    const reqGB = parseFloat(document.getElementById('inpTlSize').value) || 0;
-    const reqMB = reqGB * 1024;
+    // Simulation Slider
+    const simGB = parseFloat(slSim.value);
+    slTxt.innerText = fn(simGB, 1);
+    const surv = (remMB_cache/1024) / simGB;
+    outSim.innerText = `${fn(surv, 0)} ${dict[l].txtDays}`;
     
-    if(reqMB === 0) eDown.innerText = "--";
-    else if(reqMB < remMB) {
-        const leftover = formatAutoUnit(remMB - reqMB);
-        eDown.style.color = "var(--status-safe)";
-        eDown.innerText = `${dict[currentLang].msgEnough} ${leftover.v} ${leftover.u}`;
-    } else {
-        const deficit = formatAutoUnit(reqMB - remMB);
-        eDown.style.color = "var(--status-crit)";
-        eDown.innerText = `${dict[currentLang].msgNotEnough} ${deficit.v} ${deficit.u}`;
+    // Download Calc
+    const tg = parseFloat(inpDn.value)*1024;
+    if(!isNaN(tg) && tg > 0) {
+        oDn.innerText = tg <= remMB_cache ? `Safe: Remains ${tAuto(remMB_cache-tg).v} ${tAuto(remMB_cache-tg).u}` : `Deficit: Need ${tAuto(tg-remMB_cache).v} ${tAuto(tg-remMB_cache).u}`;
+        oDn.style.color = tg<=remMB_cache ? 'var(--c-green)' : 'var(--c-red)';
     }
 
-    // Video Tool
-    const rateGBperHr = parseFloat(document.getElementById('inpTlQual').value);
-    const hrs = (remMB / 1024) / rateGBperHr;
-    eVid.style.color = "var(--primary)";
-    eVid.innerText = `≈ ${fNum(hrs, 1)} ${dict[currentLang].msgHours}`;
+    // Speed Calc
+    const ms = parseFloat(mS.value), gs = parseFloat(gS.value);
+    if(!isNaN(ms) && !isNaN(gs) && ms>0) {
+        const secs = (gs * 1024 * 8) / ms;
+        const h = Math.floor(secs / 3600); const m = Math.floor((secs % 3600) / 60);
+        oS.innerText = `${h}H ${m}M`; oS.style.color="var(--primary)";
+    }
 }
 
-// Bootstrap
-loadState();
+loadU();
